@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Sisyphus</title>
+		<link rel="stylesheet" href="/study_assets/sisyphus/libs/jquery-ui-1.12.1.custom/jquery-ui.min.css">
+		<link rel="stylesheet" href="/study_assets/sisyphus/libs/pure-release-1.0.0/pure-min.css">
+		<link rel="stylesheet" href="/study_assets/sisyphus/css/general.css">
+		<link rel="stylesheet" href="/study_assets/sisyphus/css/options_1.css">
+		<script src="/assets/javascripts/jatos.js"></script>
+		<script src="/study_assets/sisyphus/libs/jquery-3.4.0.min.js"></script>
+		<script src="/study_assets/sisyphus/libs/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+	</head>
+	<body>
+		<div id="component">
+
+			<p id="progressbarText"></p>
+			<div id="progressbar"></div>
+			<div id="error"></div>
+
+			<form id="options1Form">
+				<div class="pure-g">
+					<div class="pure-u-1-3">
+						<p class="form-label">Distractors</p>
+					</div>
+					<div class="pure-u-2-3">
+						<div id="distractorsButtonset">
+							<input type="radio" id="a" name="distractors">
+							<label for="a">A</label>
+							<input type="radio" id="b" name="distractors">
+							<label for="b">B</label>
+							<input type="radio" id="ac" name="distractors">
+							<label for="ac">A+C</label>
+							<input type="radio" id="bc" name="distractors">
+							<label for="bc">B+C</label>
+							<input type="radio" id="none" name="distractors">
+							<label for="none">None</label>
+						</div>
+					</div>
+					<div class="pure-u-1-3">
+						<p class="form-label">Pursuit</p>
+					</div>
+					<div class="pure-u-2-3">
+						<div id="pursuitButtonset">
+							<input type="radio" id="yes" name="pursuit">
+							<label for="yes" role="button">Yes</label>
+							<input type="radio" id="no" name="pursuit">
+							<label for="no" role="button">No</label>
+						</div>
+					</div>
+					<div class="pure-u-1-3">
+						<p class="form-label">Results</p>
+					</div>
+					<div class="pure-u-2-3">
+						<div id="resultsButtonset">
+							<input type="radio" id="visible" name="results">
+							<label for="visible" role="button">Visible</label>
+							<input type="radio" id="invisible" name="results">
+							<label for="invisible" role="button">Invisible</label>
+						</div>
+					</div>
+					<div class="pure-u-1-3">
+						<p class="form-label">Show instruction?</p>
+					</div>
+					<div class="pure-u-2-3">
+						<div id="instructionButtonset">
+							<input type="radio" id="ins-yes" name="instruction">
+							<label for="ins-yes" role="button">Yes</label>
+							<input type="radio" id="ins-no" name="instruction">
+							<label for="ins-no" role="button">No</label>
+						</div>
+					</div>
+					<div class="pure-u-1-3">
+						<p class="form-label">Personal code</p>
+					</div>
+					<div class="pure-u-2-3">
+						<input class="ui-widget ui-state-default ui-corner-all form-input"
+							type="text" id="codeInput" name="code">
+					</div>
+					<div class="pure-u-1-3">
+					</div>
+					<div class="pure-u-2-3">
+						<input class="ui-widget ui-button ui-state-default ui-corner-all form-item"
+							type="submit" value="Submit">
+					</div>
+				</div>
+			</form>
+
+		</div>
+		<script>
+			var componentSSD = {};
+
+			$(function() {
+				initJQueryUiItems();
+			});
+
+			function initJQueryUiItems() {
+				$("#distractorsButtonset").buttonset();
+				$("#pursuitButtonset").buttonset();
+				$("#resultsButtonset").buttonset();
+				$("#instructionButtonset").buttonset();
+			}
+
+			jatos.onLoad(function() {
+				startComponent();
+			});
+
+			jatos.onError(function(errorMsg) {
+				showError(errorMsg);
+			});
+
+			function startComponent() {
+				initProgressbar();
+				addSubmitEvent();
+
+				$(document).keydown(function(event) {
+					if (event.keyCode == 27) {
+						var answer = confirm("Do you really want to quit this study?");
+						if (answer == true) {
+							jatos.abortStudy("Worker decided to abort");
+						}
+					}
+				});
+			}
+
+			function initProgressbar() {
+				$("#progressbar").progressbar({
+					value: jatos.componentPos,
+					max: jatos.componentList.length
+				});
+				var progressbarText = "Page " + jatos.componentPos + " of " + jatos.componentList.length;
+				$("#progressbarText").text(progressbarText);
+			}
+
+			function addSubmitEvent() {
+				$("#options1Form").submit(function(event) {
+					event.preventDefault();
+
+					if (!validateForm()) {
+						return;
+					}
+
+					fillResultData();
+					endComponentAndNext();
+				});
+			}
+			
+			function validateForm() {
+				if ($("#distractorsButtonset :radio:checked + label").text().length === 0) {
+					showError("Please choose distractors!");
+					return false;
+				}
+				if ($("#pursuitButtonset :radio:checked + label").text().length === 0) {
+					showError("Please choose a pursuit option!");
+					return false;
+				}
+				if ($("#resultsButtonset :radio:checked + label").text().length === 0) {
+					showError("Please choose a visibility of results!");
+					return false;
+				}
+				if ($("#instructionButtonset :radio:checked + label").text().length === 0) {
+					showError("Please choose a presence of instruction!");
+					return false;
+				}
+				if ($("#codeInput").val().length === 0) {
+					showError("Please enter your code!");
+					return false;
+				}
+				return true;
+			}
+
+			function fillResultData() {
+				componentSSD.distractors = $("#distractorsButtonset :radio:checked + label").text();
+				componentSSD.pursuit = $("#pursuitButtonset :radio:checked + label").text();
+				componentSSD.results = $("#resultsButtonset :radio:checked + label").text();
+				componentSSD.instruction = $("#instructionButtonset :radio:checked + label").text();
+				componentSSD.code = $("#codeInput").val();
+			}
+
+			function endComponentAndNext() {
+				var studySessionData = {options1: componentSSD, options2: null, options3: null};
+				jatos.setStudySessionData(studySessionData, jatos.startNextComponent, showError);
+			}
+
+			function showError(errorMsg) {
+				$("#error").html(errorMsg).show();
+			}
+
+		</script>
+	</body>
+</html>
