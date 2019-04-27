@@ -170,10 +170,10 @@
 			}
 
 			function fillResultData() {
-				componentSSD.distractors = $("#distractorsButtonset :radio:checked + label").text();
-				componentSSD.pursuit = $("#pursuitButtonset :radio:checked + label").text();
-				componentSSD.results = $("#resultsButtonset :radio:checked + label").text();
-				componentSSD.instruction = $("#instructionButtonset :radio:checked + label").text();
+				componentSSD.distractors = $("#distractorsButtonset :radio:checked + label").text().trim();
+				componentSSD.pursuit = $("#pursuitButtonset :radio:checked + label").text().trim();
+				componentSSD.results = $("#resultsButtonset :radio:checked + label").text().trim();
+				componentSSD.instruction = $("#instructionButtonset :radio:checked + label").text().trim();
 				componentSSD.code = $("#codeInput").val();
 			}
 
