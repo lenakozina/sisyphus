@@ -81,7 +81,7 @@
 					</div>
 					<div class="pure-u-2-3">
 						<input class="ui-widget ui-button ui-state-default ui-corner-all form-item"
-							type="submit" value="Submit">
+							type="submit" value="Next">
 					</div>
 				</div>
 			</form>
@@ -126,9 +126,9 @@
 			function initProgressbar() {
 				$("#progressbar").progressbar({
 					value: jatos.componentPos,
-					max: jatos.componentList.length
+					max: (jatos.componentList.length - 1)
 				});
-				var progressbarText = "Page " + jatos.componentPos + " of " + jatos.componentList.length;
+				var progressbarText = "Page " + jatos.componentPos + " of " + (jatos.componentList.length - 1);
 				$("#progressbarText").text(progressbarText);
 			}
 
