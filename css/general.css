@@ -28,3 +28,10 @@ body {
     color: red;
     display: none;
 }
+
+.text {
+    text-align: left;
+    margin: 0;
+    padding: 0;
+    margin-bottom: 10px;
+}
