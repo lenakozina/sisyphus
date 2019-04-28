@@ -175,14 +175,9 @@
 				});
 				$("#squareMoveSlider").slider("value", 10);
 
-				var disabled = false;
-				var distractors = jatos.studySessionData.options1.distractors;
-				if (distractors === "None") {
-					disabled = true;
-				}
 				$("#showDistractorSlider").slider({
 					orientation: "horizontal",
-					disabled: disabled,
+					disabled: false,
 					range: false,
 					min: 100,
 					max: 2000,
@@ -193,7 +188,7 @@
 				$("#showDistractorSlider").slider("value", 100);
 				$("#howLongDistractorSlider").slider({
 					orientation: "horizontal",
-					disabled: disabled,
+					disabled: false,
 					range: false,
 					min: 100,
 					max: 1000,
@@ -245,6 +240,13 @@
 
 			function startComponent() {
 				initProgressbar();
+
+				var distractors = jatos.studySessionData.options1.distractors;
+				if (distractors === "None") {
+					$("#showDistractorSlider").slider("option", "disabled", true);
+					$("#howLongDistractorSlider").slider("option", "disabled", true);
+				}
+
 				addSubmitEvent();
 
 				$("#countTypeButtonset").change(function() {
