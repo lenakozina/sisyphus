@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Sisyphus</title>
+		<link rel="stylesheet" href="/study_assets/sisyphus/libs/jquery-ui-1.12.1.custom/jquery-ui.min.css">
+		<link rel="stylesheet" href="/study_assets/sisyphus/libs/pure-release-1.0.0/pure-min.css">
+		<link rel="stylesheet" href="/study_assets/sisyphus/css/general.css">
+		<link rel="stylesheet" href="/study_assets/sisyphus/css/options_3.css">
+		<script src="/assets/javascripts/jatos.js"></script>
+		<script src="/study_assets/sisyphus/libs/jquery-3.4.0.min.js"></script>
+		<script src="/study_assets/sisyphus/libs/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+	</head>
+	<body>
+		<div id="component">
+
+			<p id="progressbarText"></p>
+			<div id="progressbar"></div>
+			<div id="error"></div>
+
+			<form id="options3Form">
+				<div class="pure-g">
+
+					<div class="pure-u-1">
+						<p class="form-center">Falsifying displayed result during the study</p>
+					</div>
+					<div class="pure-u-1-3">
+						<p class="form-label"></p>
+					</div>
+					<div class="pure-u-1-3">
+						<div class="form-item" id="falsifySlider"></div>
+					</div>
+					<div class="pure-u-1-3">
+						<p class="form-item text" id="falsifySliderText"></p>
+					</div>
+
+					<div class="pure-u-1">
+						<p class="form-space"></p>
+					</div>
+
+					<div class="pure-u-1">
+						<p class="form-center">Display settings</p>
+					</div>
+					<div class="pure-u-1-3">
+						<p class="form-label">Screen size</p>
+					</div>
+					<div class="pure-u-1-3">
+						<div class="form-item" id="screenSizeSlider"></div>
+					</div>
+					<div class="pure-u-1-3">
+						<p class="form-item text" id="screenSizeSliderText"></p>
+					</div>
+					<div class="pure-u-1-3">
+						<p class="form-label">Square size</p>
+					</div>
+					<div class="pure-u-1-3">
+						<div class="form-item" id="squareSizeSlider"></div>
+					</div>
+					<div class="pure-u-1-3">
+						<p class="form-item text" id="squareSizeSliderText"></p>
+					</div>
+
+					<div class="pure-u-1" id="submitUnit">
+						<input class="ui-widget ui-button ui-state-default ui-corner-all form-item" id="submitBtn"
+							type="submit" value="Start study">
+					</div>
+
+				</div>
+			</form>
+
+		</div>
+		<script>
+			var componentSSD = {};
+
+			$(function() {
+				initJQueryUiItems();
+			});
+
+			function initJQueryUiItems() {
+				$("#falsifySlider").slider({
+					orientation: "horizontal",
+					disabled: false,
+					range: false,
+					min: -50,
+					max: 50,
+					value: 0,
+					slide: refreshFalsifySliderText,
+					change: refreshFalsifySliderText
+				});
+				$("#falsifySlider").slider("value", 0);
+				$("#screenSizeSlider").slider({
+					orientation: "horizontal",
+					disabled: false,
+					range: false,
+					min: 411,
+					max: 685,
+					value: 682,
+					slide: refreshScreenSizeSliderText,
+					change: refreshScreenSizeSliderText
+				});
+				$("#screenSizeSlider").slider("value", 682);
+				$("#squareSizeSlider").slider({
+					orientation: "horizontal",
+					disabled: false,
+					range: false,
+					min: 5,
+					max: 100,
+					value: 25,
+					slide: refreshSquareSizeSliderText,
+					change: refreshSquareSizeSliderText
+				});
+				$("#squareSizeSlider").slider("value", 25);
+
+				$("#submitBtn").position({
+					my: "center",
+					at: "center",
+					of: "#submitUnit"
+				});
+			}
+
+			function refreshFalsifySliderText() {
+				$("#falsifySliderText").text($("#falsifySlider").slider("value") + " %");
+			}
+
+			function refreshScreenSizeSliderText() {
+				var pxWidth = $("#screenSizeSlider").slider("value");
+				var pxHeight = Math.round(pxWidth / 1.821);
+				$("#screenSizeSliderText").text(pxWidth + " x " + pxHeight + " px");
+			}
+
+			function refreshSquareSizeSliderText() {
+				$("#squareSizeSliderText").text($("#squareSizeSlider").slider("value") + " px");
+			}
+
+			jatos.onLoad(function() {
+				startComponent();
+			});
+
+			jatos.onError(function(errorMsg) {
+				showError(errorMsg);
+			});
+
+			function startComponent() {
+				initProgressbar();
+				addSubmitEvent();
+
+				$(document).keydown(function(event) {
+					if (event.keyCode == 27) {
+						var answer = confirm("Do you really want to quit this study?");
+						if (answer == true) {
+							jatos.abortStudy("Worker decided to abort");
+						}
+					}
+				});
+			}
+
+			function initProgressbar() {
+				$("#progressbar").progressbar({
+					value: jatos.componentPos,
+					max: (jatos.componentList.length - 1)
+				});
+				var progressbarText = "Page " + jatos.componentPos + " of " + (jatos.componentList.length - 1);
+				$("#progressbarText").text(progressbarText);
+			}
+
+			function addSubmitEvent() {
+				$("#options2Form").submit(function(event) {
+					event.preventDefault();
+
+					if (!validateForm()) {
+						return;
+					}
+
+					fillResultData();
+					endComponentAndNext();
+				});
+			}
+
+			function validateForm() {
+				return true;
+			}
+
+			function fillResultData() {
+				componentSSD.falsify = $("#falsifySlider").slider("value");
+				componentSSD.screenSize = $("#screenSizeSlider").slider("value");
+				componentSSD.squareSize = $("#squareSizeSlider").slider("value");
+			}
+
+			function endComponentAndNext() {
+				var studySessionData = {options1: jatos.studySessionData.options1, options2: jatos.studySessionData.options2, options3: componentSSD};
+				jatos.studySessionData = studySessionData;
+				jatos.startNextComponent();
+			}
+
+			function showError(errorMsg) {
+				$("#error").html(errorMsg).show();
+			}
+
+		</script>
+	</body>
+</html>
