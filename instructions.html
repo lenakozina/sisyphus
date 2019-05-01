@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Sisyphus</title>
+		<link rel="stylesheet" href="/study_assets/sisyphus/libs/jquery-ui-1.12.1.custom/jquery-ui.min.css">
+		<link rel="stylesheet" href="/study_assets/sisyphus/libs/pure-release-1.0.0/pure-min.css">
+		<link rel="stylesheet" href="/study_assets/sisyphus/css/instructions.css">
+		<script src="/assets/javascripts/jatos.js"></script>
+		<script src="/study_assets/sisyphus/libs/jquery-3.4.0.min.js"></script>
+		<script src="/study_assets/sisyphus/libs/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+	</head>
+	<body>
+
+		<p id="progressText"></p>
+
+		<div id="box">
+			<p id="error"></p>
+			<p id="text"></p>
+			<p id="moveSlidesText"></p>
+		</div>
+
+		<p id="quit">Quit Study</p>
+
+		<script>
+			var slideList;
+			var slideCount = 0;
+			var moveSlidesText;
+			var componentState = Object.freeze({
+				RUNNING : 0,
+				WAITING : 1,
+				FINISHED : 2,
+				ERROR : 3
+			});
+			var currentComponentState = componentState.WAITING;
+
+			jatos.onLoad(function() {
+				currentComponentState = componentState.RUNNING;
+				resetSlide();
+				startComponent();
+			});
+
+			$(document).keydown(function(event) {
+				if (event.ctrlKey || event.altKey || event.altGraphKey || event.shiftKey) {
+					return;
+				}
+
+				switch (currentComponentState) {
+					case componentState.RUNNING:
+						var keycode = (event.keyCode ? event.keyCode : event.which);
+						if (keycode == 39) {
+							nextSlide();
+						} else if (keycode == 37) {
+							previousSlide();
+						}
+						return;
+					case componentState.ERROR:
+						finishStudyWithError();
+						return;
+				}
+			});
+
+			function startComponent() {
+				slideList = jatos.componentJsonInput.slideList;
+				moveSlidesText = "Press &#x2192; to go to the next slide or "
+					+ "&#x2190; to go to the previous one";
+				displaySlide();
+			}
+
+			function displaySlide() {
+				var progressText = (slideCount + 1) + " of " + slideList.length + " slides";
+				var text = slideList[slideCount].text;
+				$("#progressText").html(progressText).show();
+				$("#text").html(text).show();
+				$("#moveSlidesText").html(moveSlidesText).show();
+			}
+
+			function nextSlide() {
+				slideCount++;
+				if (slideCount < slideList.length) {
+					displaySlide();
+				} else {
+					jatos.startNextComponent();
+				}
+			}
+
+			function previousSlide() {
+				if (slideCount > 0) {
+					slideCount--;
+					displaySlide();
+				}
+			}
+
+			function showError(errorMsg) {
+				resetSlide();
+				currentComponentState = componentState.ERROR;
+				window.errorMsg = errorMsg;
+				$("#error").html(errorMsg).show();
+			}
+
+			function resetSlide() {
+				$("#box").children().hide();
+			}
+
+			function finishStudyWithError() {
+				currentComponentState = componentState.FINISHED;
+				jatos.endComponent(false, window.errorMsg, jatos.endStudy(false, window.errorMsg));
+			}
+
+			$("#quit").click(function() {
+				var answer = confirm("Do you really want to quit this study?");
+				if (answer == true) {
+					jatos.abortStudy("Worker decided to abort");
+				}
+			});
+
+			jatos.onError(function(errorMsg) {
+				showError(errorMsg);
+			});
+		</script>
+
+	</body>
+</html>
