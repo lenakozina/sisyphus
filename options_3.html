@@ -189,7 +189,11 @@
 			function endComponentAndNext() {
 				var studySessionData = {options1: jatos.studySessionData.options1, options2: jatos.studySessionData.options2, options3: componentSSD};
 				jatos.studySessionData = studySessionData;
-				jatos.startNextComponent();
+				if (jatos.studySessionData.options1.instruction === "Yes") {
+					jatos.startNextComponent();
+				} else {
+					jatos.startLastComponent();
+				}
 			}
 
 			function showError(errorMsg) {
