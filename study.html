@@ -112,8 +112,8 @@
 				var square = {
 					x: startPosX,
 					y: startPosY,
-					vx: 1,
-					vy: 1,
+					vx: 4,
+					vy: 4,
 					size: squareSize,
 					color: 'blue',
 					steps: 0,
@@ -127,8 +127,8 @@
 				var pursuit = {
 					x: startPosX,
 					y: startPosY,
-					vx: 1,
-					vy: 1,
+					vx: 4,
+					vy: 4,
 					size: squareSize,
 					color: 'blue',
 					steps: 0,
@@ -164,7 +164,7 @@
 					square.draw();
 					if (drawPursuit === 'Yes') {
 						pursuit.draw();
-						window.setTimeout(movePursuit, squareMove*80);
+						window.setTimeout(movePursuit, squareMove*20);
 					}
 				}
 
