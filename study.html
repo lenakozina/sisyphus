@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Sisyphus</title>
+		<link rel="stylesheet" href="/study_assets/sisyphus/libs/jquery-ui-1.12.1.custom/jquery-ui.min.css">
+		<link rel="stylesheet" href="/study_assets/sisyphus/libs/pure-release-1.0.0/pure-min.css">
+		<link rel="stylesheet" href="/study_assets/sisyphus/css/study.css">
+		<script src="/assets/javascripts/jatos.js"></script>
+		<script src="/study_assets/sisyphus/libs/jquery-3.4.0.min.js"></script>
+		<script src="/study_assets/sisyphus/libs/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+	</head>
+	<body>
+
+		<p class="instruction" id="finishText">Click on the square to start</p>
+		<div class="instruction" id="error"></div>
+		
+		<canvas id="dist-lt"></canvas>
+		<canvas id="dist-lb"></canvas>
+		<canvas id="dist-rt"></canvas>
+		<canvas id="dist-rb"></canvas>
+		<canvas id="canvas"></canvas>
+
+		<script>
+			jatos.onLoad(function() {
+				startComponent();
+			});
+
+			jatos.onError(function(errorMsg) {
+				showError(errorMsg);
+			});
+
+			function getRandomInt(min, max) {
+				min = Math.ceil(min);
+				max = Math.floor(max);
+				return Math.floor(Math.random() * (max - min + 1)) + min;
+			}
+
+			function startComponent() {
+				const options1 = jatos.studySessionData.options1;
+				const options2 = jatos.studySessionData.options2;
+				const options3 = jatos.studySessionData.options3;
+
+				const distractors = options1.distractors;
+				const studyTime = options2.studySlider;
+				const distractorPause = options2.showDistractorSlider;
+				const distractorDuration = options2.howDistractorSlider;
+				const drawPursuit = options1.pursuit;
+				const squareMove = options2.squareSlider;
+				const squareSize = options3.squareSize;
+
+				var resultData = {};
+
+				var distLT = document.getElementById('dist-lt');
+				var ctxLT = distLT.getContext('2d');
+				var distLB = document.getElementById('dist-lb');
+				var ctxLB = distLB.getContext('2d');
+				var distRT = document.getElementById('dist-rt');
+				var ctxRT = distRT.getContext('2d');
+				var distRB = document.getElementById('dist-rb');
+				var ctxRB = distRB.getContext('2d');
+
+				var distSize = 200;
+				distLT.width = distSize;
+				distLT.height = distSize;
+				distLB.width = distSize;
+				distLB.height = distSize;
+				distRT.width = distSize;
+				distRT.height = distSize;
+				distRB.width = distSize;
+				distRB.height = distSize;
+
+				var path;
+				if (distractors === 'A') {
+					path = ['/study_assets/sisyphus/distractors/a'];
+				} else if (distractors === 'B') {
+					path = ['/study_assets/sisyphus/distractors/b'];
+				} else if (distractors === 'A+C') {
+					path = ['/study_assets/sisyphus/distractors/a', '/study_assets/sisyphus/distractors/c'];
+				} else if (distractors === 'B+C') {
+					path = ['/study_assets/sisyphus/distractors/b', '/study_assets/sisyphus/distractors/c'];
+				} else if (distractors === 'None') {
+					path = [];
+				}
+
+				var imgArr = [new Image(200, 200)];
+				if (distractors.length === 1) {
+					imgArr[0].src = path[0] + '/0.jpg';
+				} else if (distractors.length === 3) {
+					index = Math.round(Math.random());
+					imgArr[0].src = path[index] + '/0.jpg';
+				}
+
+				var distEnd = false;
+
+				var canvas = document.getElementById('canvas');
+				var ctx = canvas.getContext('2d');
+
+				canvas.width = options3.screenSize;
+				canvas.height = Math.round(options3.screenSize / 1.821);
+
+				const startPosX = Math.round(canvas.width / 2);
+				const startPosY = Math.round(canvas.height / 2);
+
+				var startStepsSign;
+				if (Math.round(Math.random()) === 0) {
+					startStepsSign = 'x';
+				} else {
+					startStepsSign = 'y';
+				}
+
+				var square = {
+					x: startPosX,
+					y: startPosY,
+					vx: 1,
+					vy: 1,
+					size: squareSize,
+					color: 'blue',
+					steps: 0,
+					stepsSign: startStepsSign,
+					draw: function() {
+						ctx.fillStyle = this.color;
+						ctx.fillRect(this.x, this.y, this.size, this.size);
+					}
+				};
+
+				var pursuit = {
+					x: startPosX,
+					y: startPosY,
+					vx: 1,
+					vy: 1,
+					size: squareSize,
+					color: 'blue',
+					steps: 0,
+					stepsArr: [],
+					stepsSign: startStepsSign,
+					draw: function() {
+						ctx.strokeStyle = this.color;
+						ctx.strokeRect(this.x, this.y, this.size, this.size);
+					}
+				};
+
+				function draw() {
+					if (square.steps === 0) {
+						square.steps = getRandomInt(50, 350);
+						if (drawPursuit === 'Yes') {
+							pursuit.stepsArr.unshift(square.steps);
+						}
+						square.stepsSign = square.stepsSign === 'x' ? 'y' : 'x';
+					}
+					if (square.x + square.vx + square.size > canvas.width || square.x + square.vx < 0) {
+						square.vx = -square.vx;
+					}
+					if (square.y + square.vy + square.size > canvas.height || square.y + square.vy < 0) {
+						square.vy = -square.vy;
+					}
+					if (square.stepsSign === 'x') {
+						square.x += square.vx;
+					} else {
+						square.y += square.vy;
+					}
+					square.steps -= 1;
+					ctx.clearRect(0, 0, canvas.width, canvas.height);
+					square.draw();
+					if (drawPursuit === 'Yes') {
+						pursuit.draw();
+						window.setTimeout(movePursuit, squareMove*80);
+					}
+				}
+
+				function movePursuit() {
+					if (pursuit.steps === 0) {
+						pursuit.steps = pursuit.stepsArr.pop();
+						pursuit.stepsSign = pursuit.stepsSign === 'x' ? 'y' : 'x';
+					}
+					if (pursuit.x + pursuit.vx + pursuit.size > canvas.width || pursuit.x + pursuit.vx < 0) {
+						pursuit.vx = -pursuit.vx;
+					}
+					if (pursuit.y + pursuit.vy + pursuit.size > canvas.height || pursuit.y + pursuit.vy < 0) {
+						pursuit.vy = -pursuit.vy;
+					}
+					if (pursuit.stepsSign === 'x') {
+						pursuit.x += pursuit.vx;
+					} else {
+						pursuit.y += pursuit.vy;
+					}
+					pursuit.steps -= 1;
+				}
+
+				function drawDist() {
+					if (distEnd === false) {
+						var index;
+						const imgObj = imgArr[0];
+						const corner = getRandomInt(1, 4);
+						if (corner === 1) {
+							ctxLT.drawImage(imgObj, 0, 0, distLT.width, distLT.height);
+							window.setTimeout(clearDistLT, distractorDuration);
+						}
+						if (corner === 2) {
+							ctxLB.drawImage(imgObj, 0, 0, distLB.width, distLB.height);
+							window.setTimeout(clearDistLB, distractorDuration);
+						}
+						if (corner === 3) {
+							ctxRT.drawImage(imgObj, 0, 0, distRT.width, distRT.height);
+							window.setTimeout(clearDistRT, distractorDuration);
+						}
+						if (corner === 4) {
+							ctxRB.drawImage(imgObj, 0, 0, distRB.width, distRB.height);
+							window.setTimeout(clearDistRB, distractorDuration);
+						}
+					}
+				}
+
+				function clearDistLT() {
+					ctxLT.clearRect(0, 0, distLT.width, distLT.height);
+					window.setTimeout(drawDist, distractorPause);
+				}
+
+				function clearDistLB() {
+					ctxLB.clearRect(0, 0, distLB.width, distLB.height);
+					window.setTimeout(drawDist, distractorPause);
+				}
+
+				function clearDistRT() {
+					ctxRT.clearRect(0, 0, distRT.width, distRT.height);
+					window.setTimeout(drawDist, distractorPause);
+				}
+
+				function clearDistRB() {
+					ctxRB.clearRect(0, 0, distRB.width, distRB.height);
+					window.setTimeout(drawDist, distractorPause);
+				}
+
+				var drawInterval;
+
+				function start(e) {
+					if ( (square.x <= e.offsetX && e.offsetX < square.x + square.size)
+						&& (square.y <= e.offsetY && e.offsetY < square.y + square.size) ) {
+						$("#finishText").text('');
+						drawInterval = window.setInterval(draw, squareMove);
+						window.setTimeout(endStudy, studyTime*1000);
+						if (distractors !== 'None') {
+							drawDist();
+						}
+						canvas.removeEventListener('click', start);
+					}
+				}
+
+				function endStudy() {
+					distEnd = true;
+					clearInterval(drawInterval);
+
+					var date = new Date();
+					var month = date.getMonth() + 1;
+					month = setTimeFormat(month);
+					var day = date.getDate();
+					day = setTimeFormat(day);
+					var hours = date.getHours();
+					hours = setTimeFormat(hours);
+					var minutes = date.getMinutes();
+					minutes = setTimeFormat(minutes);
+					var seconds = date.getSeconds();
+					seconds = setTimeFormat(seconds);
+					resultData.date = date.getFullYear() + '-' + month + '-' + day;
+					resultData.time = hours + ':' + minutes + ':' + seconds;
+					resultData.personal_code = options1.code;
+					resultData.distractors = options1.distractors;
+					resultData.distractor_pause = options2.showDistractorSlider;
+					resultData.distractor_duration = options2.howDistractorSlider;
+					resultData.pursuit = options1.pursuit;
+					resultData.results = options1.results;
+					resultData.instruction = options1.instruction;
+					resultData.screen_size = canvas.width + 'x' + canvas.height;
+					resultData.square_size = options3.squareSize;
+					resultData.study_time = options2.studySlider;
+					resultData.square_move = options2.squareSlider;
+
+					$("#finishText").text('Thank you for your cooperation');
+					window.setTimeout(saveAndExit, 3000);
+				}
+
+				function setTimeFormat(time) {
+					if (time < 10) {
+						return '0' + time;
+					} else {
+						return time;
+					}
+				}
+
+				function saveAndExit() {
+					var resultJson = JSON.stringify(resultData);
+					jatos.submitResultData(resultJson, jatos.endStudy);
+				}
+
+				canvas.addEventListener('click', start);
+
+				square.draw();
+				if (drawPursuit === 'Yes') {
+					pursuit.draw();
+				}
+
+				$(document).keydown(function(event) {
+					if (event.keyCode == 27) {
+						var answer = confirm("Do you really want to quit this study?");
+						if (answer == true) {
+							jatos.abortStudy("Worker decided to abort");
+						}
+					}
+				});
+			}
+
+			function showError(errorMsg) {
+				$("#error").html(errorMsg).show();
+			}
+
+		</script>
+	</body>
+</html>
