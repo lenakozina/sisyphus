@@ -21,6 +21,12 @@
 		<canvas id="dist-rb"></canvas>
 		<canvas id="canvas"></canvas>
 
+		<div id="results">
+			<p class="resultText" id="result"></p>
+			<p class="resultText" id="success"></p>
+			<p class="resultText" id="study-time"><br></p>
+		</div>
+
 		<script>
 			jatos.onLoad(function() {
 				startComponent();
@@ -48,6 +54,23 @@
 				const drawPursuit = options1.pursuit;
 				const squareMove = options2.squareSlider;
 				const squareSize = options3.squareSize;
+
+				const results = options1.results;
+				const type = options2.type;
+				const specificTime = options2.typeSlider;
+				const currentResult = options2.currentSlider;
+				const falsifyInPercent = options3.falsify;
+				const falsify = falsifyInPercent / 100;
+				const partialTime = options2.partialSlider;
+
+				var partialArray = [];
+				var partialAcc = 0;
+				var success = 0;
+				var all = 0;
+				var resultInPercent = 0;
+
+				var mouseX;
+				var mouseY;
 
 				var resultData = {};
 
@@ -166,6 +189,9 @@
 						pursuit.draw();
 						window.setTimeout(movePursuit, squareMove*20);
 					}
+					if (type === 'typeI') {
+						updateResults();
+					}
 				}
 
 				function movePursuit() {
@@ -232,12 +258,27 @@
 				}
 
 				var drawInterval;
+				var partialInterval;
+				var typeIIInterval;
+				var displayResultsInterval;
 
 				function start(e) {
 					if ( (square.x <= e.offsetX && e.offsetX < square.x + square.size)
 						&& (square.y <= e.offsetY && e.offsetY < square.y + square.size) ) {
 						$("#finishText").text('');
+						if (results === 'Visible') {
+							$("#result").text('Result: 0,00%');
+							$("#success").text('Success/All: 0/0');
+						}
+
 						drawInterval = window.setInterval(draw, squareMove);
+						runPartial();
+						if (type === 'typeII') {
+							typeIIInterval = window.setInterval(updateResults, specificTime);
+						}
+						if (results === 'Visible') {
+							displayResultsInterval = window.setInterval(displayResults, currentResult);
+						}
 						window.setTimeout(endStudy, studyTime*1000);
 						if (distractors !== 'None') {
 							drawDist();
@@ -249,6 +290,13 @@
 				function endStudy() {
 					distEnd = true;
 					clearInterval(drawInterval);
+					clearInterval(partialInterval);
+					if (type === 'typeII') {
+						clearInterval(typeIIInterval);
+					}
+					if (results === 'Visible') {
+						clearInterval(displayResultsInterval);
+					}
 
 					var date = new Date();
 					var month = date.getMonth() + 1;
@@ -270,12 +318,28 @@
 					resultData.pursuit = options1.pursuit;
 					resultData.results = options1.results;
 					resultData.instruction = options1.instruction;
+					resultData.type_of_counting = options2.type;
 					resultData.screen_size = canvas.width + 'x' + canvas.height;
 					resultData.square_size = options3.squareSize;
 					resultData.study_time = options2.studySlider;
 					resultData.square_move = options2.squareSlider;
+					if (results === 'Visible'){
+						resultData.display_results = options2.currentSlider;
+					} else {
+						resultData.display_results = 0;
+					}
+					resultData.specific_time = options2.typeSlider;
+					resultData.falsify = options3.falsify;
+					resultData.result_in_percent = resultInPercent;
+					resultData.success = success;
+					resultData.all = all;
+					resultData.partial_times = partialArray;
 
 					$("#finishText").text('Thank you for your cooperation');
+					if (results === 'Visible') {
+						$("#study-time").text('Study time: ' + options2.studySlider + ' seconds');
+					}
+
 					window.setTimeout(saveAndExit, 3000);
 				}
 
@@ -292,7 +356,42 @@
 					jatos.submitResultData(resultJson, jatos.endStudy);
 				}
 
+				function updateResults() {
+					if ( (square.x <= mouseX && mouseX < square.x + square.size)
+					&& (square.y <= mouseY && mouseY < square.y + square.size) ) {
+						success = success + 1;
+					}
+
+					all = all + 1;
+
+					resultInPercent = (success/all)*100;
+					resultInPercent = Math.round((resultInPercent+0.00001)*100)/100;
+				}
+
+				function displayResults() {
+					var falsified = resultInPercent*falsify;
+					falsified = resultInPercent + falsified;
+					falsified = Math.round((falsified+0.00001)*100)/100;
+					$("#result").text('Result: '+ falsified +'%');
+					$("#success").text('Success/All: ' + success +'/' + all);
+				}
+
+				function runPartial() {
+					partialInterval = window.setInterval(countPartial, partialTime*1000);
+				}
+
+				function countPartial() {
+					var temp = success - partialAcc;
+					partialArray.push(temp);
+					partialAcc = partialAcc + temp;
+				}
+
 				canvas.addEventListener('click', start);
+
+				canvas.addEventListener('mousemove', function(e) {
+					mouseX = e.offsetX;
+					mouseY = e.offsetY;
+				});
 
 				square.draw();
 				if (drawPursuit === 'Yes') {
