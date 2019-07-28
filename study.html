@@ -12,7 +12,7 @@
 	</head>
 	<body>
 
-		<p class="instruction" id="finishText">Click on the square to start</p>
+		<p class="instruction" id="finishText">Loading... Please wait</p>
 		<div class="instruction" id="error"></div>
 		
 		<canvas id="dist-lt"></canvas>
@@ -94,24 +94,48 @@
 				distRB.height = distSize;
 
 				var path;
+				var number;
 				if (distractors === 'A') {
 					path = ['/study_assets/sisyphus/distractors/a'];
+					number = [jatos.componentJsonInput.aNumber];
 				} else if (distractors === 'B') {
 					path = ['/study_assets/sisyphus/distractors/b'];
+					number = [jatos.componentJsonInput.bNumber];
 				} else if (distractors === 'A+C') {
 					path = ['/study_assets/sisyphus/distractors/a', '/study_assets/sisyphus/distractors/c'];
+					number = [jatos.componentJsonInput.aNumber, jatos.componentJsonInput.cNumber];
 				} else if (distractors === 'B+C') {
 					path = ['/study_assets/sisyphus/distractors/b', '/study_assets/sisyphus/distractors/c'];
+					number = [jatos.componentJsonInput.bNumber, jatos.componentJsonInput.cNumber];
 				} else if (distractors === 'None') {
 					path = [];
+					number = [];
 				}
 
-				var imgArr = [new Image(200, 200)];
-				if (distractors.length === 1) {
-					imgArr[0].src = path[0] + '/0.jpg';
-				} else if (distractors.length === 3) {
-					index = Math.round(Math.random());
-					imgArr[0].src = path[index] + '/0.jpg';
+				var images;
+
+				function loadImages(paths, numbers, callback) {
+					images = [[],[]];
+					var loadedImageCount = 0;
+
+					const reducer = (accumulator, currentValue) => accumulator + currentValue;
+					const imageCount = numbers.reduce(reducer);
+
+					for (var i = 0; i < paths.length; i++) {
+						for (var j = 0; j < numbers[i]; j++) {
+							var img = new Image(200, 200);
+							img.onload = imageLoaded;
+							img.src = paths[i] + '/' + j + '.jpg';
+							images[i][j] = img;
+						}
+					}
+
+					function imageLoaded(e) {
+						loadedImageCount++;
+						if (loadedImageCount >= imageCount) {
+							callback();
+						}
+					}
 				}
 
 				var distEnd = false;
@@ -216,7 +240,16 @@
 				function drawDist() {
 					if (distEnd === false) {
 						var index;
-						const imgObj = imgArr[0];
+						var imgIndex;
+						var imgObj;
+						if (distractors.length === 1) {
+							imgIndex = getRandomInt(0, number[0]-1);
+							imgObj = images[0][imgIndex];
+						} else if (distractors.length === 3) {
+							index = Math.round(Math.random());
+							imgIndex = getRandomInt(0, number[index]-1);
+							imgObj = images[index][imgIndex];
+						}
 						const corner = getRandomInt(1, 4);
 						if (corner === 1) {
 							ctxLT.drawImage(imgObj, 0, 0, distLT.width, distLT.height);
@@ -386,7 +419,15 @@
 					partialAcc = partialAcc + temp;
 				}
 
-				canvas.addEventListener('click', start);
+				if (distractors === 'None') {
+					canvas.addEventListener('click', start);
+					$("#finishText").text('Click on the square to start');
+				} else {
+					var loader = loadImages(path, number, function() {
+						canvas.addEventListener('click', start);
+						$("#finishText").text('Click on the square to start');
+					});
+				}
 
 				canvas.addEventListener('mousemove', function(e) {
 					mouseX = e.offsetX;
